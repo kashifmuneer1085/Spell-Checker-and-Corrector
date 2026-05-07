@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpellCheckerPro — DSA Project</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1f3057;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --glow: 0 0 20px rgba(0,212,255,0.25);
+    --glow2: 0 0 20px rgba(124,58,237,0.25);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Grid background ── */
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events:none; z-index:0;
+  }
+
+  /* ── Orb decorations ── */
+  .orb {
+    position:fixed; border-radius:50%;
+    filter: blur(90px); pointer-events:none; z-index:0;
+    animation: pulse 8s ease-in-out infinite;
+  }
+  .orb1 { width:500px;height:500px; background:rgba(0,212,255,0.07); top:-150px;right:-100px; }
+  .orb2 { width:400px;height:400px; background:rgba(124,58,237,0.07); bottom:-100px;left:-100px; animation-delay:4s; }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  /* ── Layout ── */
+  .wrapper { position:relative; z-index:1; max-width:960px; margin:0 auto; padding:0 24px 80px; }
+
+  /* ── Hero ── */
+  .hero {
+    text-align:center;
+    padding:70px 0 48px;
+  }
+  .hero-badge {
+    display:inline-flex; align-items:center; gap:8px;
+    background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.2);
+    border-radius:100px; padding:6px 16px;
+    font-family:'JetBrains Mono', monospace; font-size:11px;
+    letter-spacing:2px; text-transform:uppercase; color:var(--accent);
+    margin-bottom:28px;
+  }
+  .hero-badge::before { content:''; width:6px;height:6px; border-radius:50%; background:var(--accent3); animation:blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  h1 {
+    font-size:clamp(42px,6vw,72px); font-weight:800; line-height:1;
+    letter-spacing:-2px;
+    background: linear-gradient(135deg, #fff 30%, var(--accent) 70%, var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom:18px;
+  }
+  .hero-sub {
+    font-size:16px; color:var(--muted); max-width:540px; margin:0 auto 36px;
+    line-height:1.7;
+  }
+  .ds-pills {
+    display:flex; justify-content:center; flex-wrap:wrap; gap:10px; margin-bottom:40px;
+  }
+  .pill {
+    display:flex; align-items:center; gap:7px;
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:100px; padding:8px 16px;
+    font-family:'JetBrains Mono', monospace; font-size:12px;
+    color:var(--text); transition:all 0.2s;
+  }
+  .pill:hover { border-color:var(--accent); color:var(--accent); box-shadow:var(--glow); }
+  .pill-icon { font-size:14px; }
+
+  /* ── Section ── */
+  .section { margin-bottom:40px; }
+  .section-label {
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px; letter-spacing:3px; text-transform:uppercase;
+    color:var(--accent); margin-bottom:16px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  /* ── Cards ── */
+  .card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:16px; padding:28px;
+    transition:border-color 0.2s, box-shadow 0.2s;
+  }
+  .card:hover { border-color:rgba(0,212,255,0.3); }
+
+  /* ── Interactive Spell Demo ── */
+  .demo-input-row {
+    display:flex; gap:10px; margin-bottom:16px;
+  }
+  .text-input {
+    flex:1; background:var(--surface2); border:1px solid var(--border);
+    border-radius:10px; padding:14px 18px;
+    color:var(--text); font-family:'Syne',sans-serif; font-size:15px;
+    outline:none; transition:border-color 0.2s, box-shadow 0.2s;
+  }
+  .text-input:focus { border-color:var(--accent); box-shadow:var(--glow); }
+  .text-input::placeholder { color:var(--muted); }
+
+  .btn {
+    padding:14px 22px; border:none; border-radius:10px;
+    font-family:'Syne',sans-serif; font-weight:700; font-size:14px;
+    cursor:pointer; transition:all 0.15s; white-space:nowrap;
+  }
+  .btn-primary {
+    background:linear-gradient(135deg, var(--accent), #0095cc);
+    color:#000;
+  }
+  .btn-primary:hover { transform:translateY(-1px); box-shadow:var(--glow); }
+  .btn-secondary {
+    background:var(--surface2); border:1px solid var(--border); color:var(--text);
+  }
+  .btn-secondary:hover { border-color:var(--accent2); color:var(--accent2); }
+
+  .result-box {
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:10px; padding:16px 18px; min-height:60px;
+    font-family:'JetBrains Mono', monospace; font-size:13px;
+    line-height:1.8; display:none;
+  }
+  .result-box.visible { display:block; }
+  .correct { color:var(--accent3); }
+  .wrong { color:var(--danger); }
+  .suggestion { color:var(--accent); }
+  .highlight-wrong { background:rgba(239,68,68,0.15); border-radius:4px; padding:1px 4px; color:var(--danger); }
+  .highlight-fixed { background:rgba(16,185,129,0.15); border-radius:4px; padding:1px 4px; color:var(--accent3); }
+
+  .tab-row {
+    display:flex; gap:4px; margin-bottom:20px;
+    background:var(--surface2); border-radius:10px; padding:4px;
+  }
+  .tab {
+    flex:1; padding:10px; border:none; border-radius:8px;
+    font-family:'Syne',sans-serif; font-weight:600; font-size:13px;
+    cursor:pointer; background:transparent; color:var(--muted);
+    transition:all 0.2s;
+  }
+  .tab.active { background:var(--accent); color:#000; }
+
+  /* ── Step cards (startup guide) ── */
+  .steps { display:flex; flex-direction:column; gap:12px; }
+  .step {
+    display:flex; gap:20px; align-items:flex-start;
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:12px; padding:20px 22px;
+    transition:border-color 0.2s;
+  }
+  .step:hover { border-color:rgba(124,58,237,0.4); }
+  .step-num {
+    min-width:36px; height:36px; border-radius:50%;
+    background:linear-gradient(135deg,var(--accent2),#4f46e5);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono',monospace; font-weight:700; font-size:14px; color:#fff;
+  }
+  .step-content h4 { font-size:15px; font-weight:700; margin-bottom:6px; }
+  .step-content p { color:var(--muted); font-size:13px; line-height:1.6; }
+  .code-snippet {
+    display:block; margin-top:10px;
+    background:var(--bg); border:1px solid var(--border);
+    border-radius:8px; padding:10px 14px;
+    font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent3);
+    white-space:pre; overflow-x:auto;
+  }
+
+  /* ── DSA Architecture viz ── */
+  .arch-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .arch-card {
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:12px; padding:20px;
+    transition:all 0.2s;
+  }
+  .arch-card:hover { border-color:var(--accent); box-shadow:var(--glow); }
+  .arch-card h4 { font-size:14px; font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+  .arch-icon { font-size:18px; }
+  .arch-card p { font-size:12px; color:var(--muted); line-height:1.6; margin-bottom:10px; }
+  .complexity { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--accent3); }
+  .complexity span { color:var(--muted); }
+
+  /* ── Commands table ── */
+  .cmd-table { width:100%; border-collapse:collapse; }
+  .cmd-table th {
+    text-align:left; font-size:11px; letter-spacing:1px; text-transform:uppercase;
+    color:var(--muted); padding:8px 12px; border-bottom:1px solid var(--border);
+    font-family:'JetBrains Mono',monospace;
+  }
+  .cmd-table td { padding:10px 12px; font-size:13px; border-bottom:1px solid rgba(31,48,87,0.4); }
+  .cmd-table tr:last-child td { border-bottom:none; }
+  .cmd-table tr:hover td { background:rgba(0,212,255,0.03); }
+  .cmd-name { font-family:'JetBrains Mono',monospace; color:var(--accent); }
+
+  /* ── Footer ── */
+  footer {
+    text-align:center; padding:30px 0 0;
+    border-top:1px solid var(--border);
+    color:var(--muted); font-size:12px; line-height:1.8;
+  }
+  footer span { color:var(--accent3); }
+
+  @media (max-width:640px) {
+    .arch-grid { grid-template-columns:1fr; }
+    .demo-input-row { flex-direction:column; }
+    h1 { letter-spacing:-1px; }
+  }
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<div class="wrapper">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">DSA Project · Spell Checker Pro</div>
+    <h1>SpellChecker<br>Pro</h1>
+    <p class="hero-sub">
+      A full spell-checker and auto-corrector built with
+      <strong>Binary Search Trees</strong>, <strong>Tries</strong>,
+      and <strong>Dynamic Programming</strong> (Edit Distance).
+    </p>
+    <div class="ds-pills">
+      <div class="pill"><span class="pill-icon">🌳</span> BST Dictionary Lookup O(log n)</div>
+      <div class="pill"><span class="pill-icon">🔤</span> Trie Autocomplete O(k)</div>
+      <div class="pill"><span class="pill-icon">📐</span> Edit Distance DP O(mn)</div>
+    </div>
+  </section>
+
+  <!-- INTERACTIVE DEMO -->
+  <section class="section">
+    <div class="section-label">Live Demo</div>
+    <div class="card">
+      <div class="tab-row">
+        <button class="tab active" onclick="setTab('check')">✓ Check Word</button>
+        <button class="tab" onclick="setTab('suggest')">💡 Suggestions</button>
+        <button class="tab" onclick="setTab('correct')">✨ Auto-Correct</button>
+      </div>
+
+      <div id="tab-check">
+        <div class="demo-input-row">
+          <input class="text-input" id="checkInput" placeholder="Type a word..." oninput="onCheckType()" />
+        </div>
+        <div class="result-box" id="checkResult"></div>
+      </div>
+
+      <div id="tab-suggest" style="display:none">
+        <div class="demo-input-row">
+          <input class="text-input" id="suggestInput" placeholder="Type a misspelled word..." />
+          <button class="btn btn-primary" onclick="doSuggest()">Get Suggestions</button>
+        </div>
+        <div class="result-box" id="suggestResult"></div>
+      </div>
+
+      <div id="tab-correct" style="display:none">
+        <div class="demo-input-row">
+          <input class="text-input" id="correctInput" placeholder="Type a sentence with errors..." />
+          <button class="btn btn-primary" onclick="doCorrect()">Auto-Correct</button>
+        </div>
+        <div class="result-box" id="correctResult"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STARTUP GUIDE -->
+  <section class="section">
+    <div class="section-label">Startup Guide</div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>Prerequisites</h4>
+          <p>Make sure you have a C++17-compatible compiler installed on your system.</p>
+          <code class="code-snippet">g++ --version   # Need 7.0+
+# Windows: install MinGW or use MSVC
+# macOS  : xcode-select --install
+# Linux  : sudo apt install g++ build-essential</code>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>Clone / Download the Project</h4>
+          <p>Get the project files into a local folder.</p>
+          <code class="code-snippet">git clone https://github.com/yourname/SpellCheckerPro.git
+cd SpellCheckerPro</code>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>Compile</h4>
+          <p>Use <code>make</code> (Linux/macOS) or compile manually on Windows.</p>
+          <code class="code-snippet"># Linux / macOS
+make
+
+# Manual (all platforms)
+g++ -std=c++17 -O2 -o spellchecker src/main.cpp</code>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h4>Run the Program</h4>
+          <p>Choose a mode depending on your use case.</p>
+          <code class="code-snippet"># Built-in word list (no dictionary file needed)
+./spellchecker
+
+# With a custom dictionary file
+./spellchecker dictionary.txt
+
+# Check a .txt file directly
+./spellchecker dictionary.txt myessay.txt</code>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <h4>Try the Interactive Commands</h4>
+          <p>Once running, use the interactive prompt.</p>
+          <code class="code-snippet">  > check    speling         # check a word
+  > suggest  recieve         # get suggestions
+  > correct  Ths is wrng     # auto-correct sentence
+  > scan     She sed helllo  # find all errors
+  > demo                     # run built-in examples
+  > info                     # dictionary stats
+  > exit                     # quit</code>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- DSA ARCHITECTURE -->
+  <section class="section">
+    <div class="section-label">Data Structures Used</div>
+    <div class="arch-grid">
+
+      <div class="arch-card">
+        <h4><span class="arch-icon">🌳</span> Binary Search Tree (BST)</h4>
+        <p>All dictionary words are stored in a BST. Each node holds one word. Lookups traverse left/right subtrees based on lexicographic ordering, giving average-case O(log n) search.</p>
+        <div class="complexity">Search: <span>O(log n) avg · O(n) worst</span></div>
+        <div class="complexity">Insert: <span>O(log n) avg</span></div>
+        <div class="complexity">In-order: <span>O(n) → sorted output</span></div>
+      </div>
+
+      <div class="arch-card">
+        <h4><span class="arch-icon">🔤</span> Trie (Prefix Tree)</h4>
+        <p>Built in parallel with the BST. Each node branches on one character (26 children). Enables lightning-fast prefix-based candidate generation for suggestions.</p>
+        <div class="complexity">Insert: <span>O(k) where k = word length</span></div>
+        <div class="complexity">Prefix search: <span>O(k + results)</span></div>
+        <div class="complexity">Space: <span>O(ALPHA × N × k)</span></div>
+      </div>
+
+      <div class="arch-card">
+        <h4><span class="arch-icon">📐</span> Edit Distance (DP)</h4>
+        <p>Wagner-Fischer algorithm. Fills an (m+1)×(n+1) table to compute minimum edits (insert, delete, replace) between two strings. Used to rank all candidates by closeness.</p>
+        <div class="complexity">Time: <span>O(m × n)</span></div>
+        <div class="complexity">Space: <span>O(m × n)</span></div>
+        <div class="complexity">Threshold: <span>≤ 3 edits for suggestions</span></div>
+      </div>
+
+      <div class="arch-card">
+        <h4><span class="arch-icon">🔗</span> Pipeline</h4>
+        <p>When a word is not found in the BST, the Trie generates prefix candidates. These are merged with edit-distance filtered words from the BST in-order list, then ranked.</p>
+        <div class="complexity">BST lookup → <span>O(log n)</span></div>
+        <div class="complexity">Trie prefix → <span>O(k)</span></div>
+        <div class="complexity">Score & rank → <span>O(c·m·n)</span></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- COMMANDS REFERENCE -->
+  <section class="section">
+    <div class="section-label">Command Reference</div>
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table class="cmd-table">
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>Example</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="cmd-name">check &lt;word&gt;</td><td><code style="font-family:JetBrains Mono,monospace;font-size:12px;color:#64748b">check speling</code></td><td>BST lookup — correct or not</td></tr>
+          <tr><td class="cmd-name">suggest &lt;word&gt;</td><td><code style="font-family:JetBrains Mono,monospace;font-size:12px;color:#64748b">suggest recieve</code></td><td>Top 5 suggestions ranked by edit distance</td></tr>
+          <tr><td class="cmd-name">correct &lt;sentence&gt;</td><td><code style="font-family:JetBrains Mono,monospace;font-size:12px;color:#64748b">correct Ths is wrng</code></td><td>Auto-corrects every misspelled word</td></tr>
+          <tr><td class="cmd-name">scan &lt;sentence&gt;</td><td><code style="font-family:JetBrains Mono,monospace;font-size:12px;color:#64748b">scan She sed helllo</code></td><td>Lists all misspelled words + suggestions</td></tr>
+          <tr><td class="cmd-name">file &lt;path&gt;</td><td><code style="font-family:JetBrains Mono,monospace;font-size:12px;color:#64748b">file essay.txt</code></td><td>Full report with line numbers & accuracy %</td></tr>
+          <tr><td class="cmd-name">add &lt;word&gt;</td><td><code style="font-family:JetBrains Mono,monospace;font-size:12px;color:#64748b">add urdu</code></td><td>Adds word to BST + Trie at runtime</td></tr>
+          <tr><td class="cmd-name">info</td><td><code style="font-family:JetBrains Mono,monospace;font-size:12px;color:#64748b">info</code></td><td>Dictionary size and DS info</td></tr>
+          <tr><td class="cmd-name">demo</td><td><code style="font-family:JetBrains Mono,monospace;font-size:12px;color:#64748b">demo</code></td><td>Runs all built-in examples</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <p>SpellCheckerPro · DSA Project · Built with <span>BST + Trie + DP Edit Distance</span></p>
+    <p style="margin-top:6px">C++17 · No external libraries · Single header architecture</p>
+  </footer>
+
+</div>
+
+<script>
+// ── Demo dictionary (subset) ──────────────────────────────────────────────
+const DICT = new Set([
+  "a","about","above","after","again","all","also","always","am","an","and",
+  "any","are","as","at","back","be","because","been","before","being","both",
+  "but","by","can","come","could","day","did","do","does","done","down","each",
+  "end","even","every","few","find","first","for","found","from","get","give",
+  "go","good","got","great","had","has","have","he","help","her","here","him",
+  "his","home","how","if","in","is","it","its","just","keep","know","large",
+  "last","learn","left","let","like","line","long","look","made","make","man",
+  "many","may","me","might","more","most","move","much","my","name","need",
+  "never","new","next","no","not","now","number","of","off","often","old","on",
+  "once","one","only","open","or","other","our","out","over","own","part",
+  "people","place","play","point","put","read","right","said","same","see",
+  "seem","set","she","should","show","since","small","so","some","soon","still",
+  "such","take","tell","than","that","the","their","them","then","there","these",
+  "they","think","this","those","thought","through","time","to","too","try",
+  "turn","two","under","up","us","use","very","want","was","way","we","well",
+  "went","were","what","when","where","which","while","who","why","will","with",
+  "word","work","world","would","year","yet","you","your","hello","world",
+  "algorithm","data","structure","binary","tree","search","insert","delete",
+  "sort","array","linked","list","queue","stack","hash","table","graph","node",
+  "spell","check","correct","dictionary","suggestion","error","letter","sentence",
+  "computer","science","language","english","write","receive","their","friend",
+  "because","separate","definitely","necessary","accommodate","beginning","beautiful",
+  "conscience","conscientious","environment","government","independent","occurrence",
+  "parliament","privilege","pronunciation","questionnaire","recommended","restaurant",
+  "ridiculous","secretary","successful","suspicious","temperature","tomorrow",
+  "unfortunately","unnecessary","until","vacuum","Wednesday","weird","which",
+  "writing","whether","whole","whose","woman","women","wonder","wrong"
+]);
+
+const WORD_LIST = Array.from(DICT);
+
+function editDistance(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({length:m+1}, (_,i)=>Array.from({length:n+1},(_,j)=>i+j));
+  dp[0][0]=0;
+  for(let i=1;i<=m;i++) dp[i][0]=i;
+  for(let j=1;j<=n;j++) dp[0][j]=j;
+  for(let i=1;i<=m;i++)
+    for(let j=1;j<=n;j++)
+      dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+  return dp[m][n];
+}
+
+function getSuggestions(word, max=5) {
+  word = word.toLowerCase();
+  const scored = WORD_LIST
+    .map(w => ({w, d: editDistance(word, w)}))
+    .filter(x => x.d <= 4)
+    .sort((a,b) => a.d - b.d)
+    .slice(0, max);
+  return scored.map(x=>x.w);
+}
+
+function isCorrect(word) { return DICT.has(word.toLowerCase()); }
+
+// ── Tab logic ──────────────────────────────────────────────────────────────
+let currentTab = 'check';
+function setTab(name) {
+  currentTab = name;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  event.target.classList.add('active');
+  ['check','suggest','correct'].forEach(id=>{
+    document.getElementById('tab-'+id).style.display = id===name?'block':'none';
+  });
+}
+
+// ── Check (live) ───────────────────────────────────────────────────────────
+function onCheckType() {
+  const word = document.getElementById('checkInput').value.trim().replace(/[^a-zA-Z]/g,'');
+  const box = document.getElementById('checkResult');
+  if (!word) { box.style.display='none'; box.classList.remove('visible'); return; }
+  box.style.display='block';
+  box.classList.add('visible');
+  const ok = isCorrect(word);
+  if (ok) {
+    box.innerHTML = `<span class="correct">✓ <strong>${word}</strong> is correctly spelled.</span>`;
+  } else {
+    const sug = getSuggestions(word, 5);
+    const sugHtml = sug.length
+      ? sug.map(s=>`<span class="suggestion">${s}</span>`).join('  ·  ')
+      : '<em>No suggestions found</em>';
+    box.innerHTML = `<span class="wrong">✗ <strong>${word}</strong> is NOT in the dictionary.</span><br><br>💡 Did you mean: ${sugHtml}`;
+  }
+}
+
+// ── Suggest ────────────────────────────────────────────────────────────────
+function doSuggest() {
+  const word = document.getElementById('suggestInput').value.trim();
+  const box = document.getElementById('suggestResult');
+  if (!word) return;
+  const sug = getSuggestions(word, 8);
+  box.style.display='block'; box.classList.add('visible');
+  if (sug.length === 0) {
+    box.innerHTML = `<em style="color:var(--muted)">No suggestions found for "${word}".</em>`;
+  } else {
+    const rows = sug.map((s,i) => {
+      const dist = editDistance(word.toLowerCase(), s);
+      return `<div style="padding:5px 0;display:flex;align-items:center;gap:12px">
+        <span style="color:var(--muted);font-size:11px;min-width:18px">${i+1}.</span>
+        <span class="suggestion" style="min-width:120px">${s}</span>
+        <span style="color:var(--muted);font-size:11px">edit distance: ${dist}</span>
+      </div>`;
+    }).join('');
+    box.innerHTML = `<div>Suggestions for <strong style="color:var(--danger)">${word}</strong>:</div>${rows}`;
+  }
+}
+
+// ── Auto-correct ───────────────────────────────────────────────────────────
+function doCorrect() {
+  const sentence = document.getElementById('correctInput').value.trim();
+  const box = document.getElementById('correctResult');
+  if (!sentence) return;
+  box.style.display='block'; box.classList.add('visible');
+
+  const words = sentence.split(/\s+/);
+  let originalHtml = '', correctedHtml = '';
+
+  words.forEach((tok, i) => {
+    const clean = tok.replace(/[^a-zA-Z]/g,'').toLowerCase();
+    const space = i > 0 ? ' ' : '';
+    if (!clean || isCorrect(clean)) {
+      originalHtml  += space + tok;
+      correctedHtml += space + tok;
+    } else {
+      const sug = getSuggestions(clean, 1);
+      const fix = sug.length ? sug[0] : tok;
+      originalHtml  += space + `<span class="highlight-wrong">${tok}</span>`;
+      correctedHtml += space + `<span class="highlight-fixed">${fix}</span>`;
+    }
+  });
+
+  box.innerHTML = `
+    <div style="margin-bottom:10px"><span style="color:var(--muted);font-size:11px">INPUT &nbsp;</span>${originalHtml}</div>
+    <div><span style="color:var(--muted);font-size:11px">OUTPUT</span> ${correctedHtml}</div>`;
+}
+
+// ── Enter keys ────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('suggestInput').addEventListener('keydown', e=>{if(e.key==='Enter')doSuggest();});
+  document.getElementById('correctInput').addEventListener('keydown', e=>{if(e.key==='Enter')doCorrect();});
+});
+</script>
+</body>
+</html>
