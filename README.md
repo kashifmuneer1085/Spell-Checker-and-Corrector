@@ -234,9 +234,9 @@ Ideas for further development:
 
 ## Author
 
-**[Your Name]**  
+**Engr Kashif Muneer**  
 Course: Data Structures & Algorithms  
-Department of Computer Science  
+Department of Computer Engineer
 
 ---
 
